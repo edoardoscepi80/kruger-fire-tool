@@ -1,6 +1,6 @@
 @echo off
 setlocal
-title Kruger Fire & Rainfall Management DSS
+title Kruger Fire and Rainfall Management DSS
 
 set "SCRIPT_DIR=%~dp0"
 set "MAIN_PY=%SCRIPT_DIR%main.py"
