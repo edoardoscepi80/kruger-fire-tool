@@ -1,56 +1,35 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
 title Kruger Fire & Rainfall Management DSS
-
-echo =====================================================================
-echo  Kruger National Park - Fire & Rainfall Management DSS
-echo  PROGES / South African National Parks
-echo =====================================================================
-echo.
 
 set "SCRIPT_DIR=%~dp0"
 set "MAIN_PY=%SCRIPT_DIR%main.py"
-set "QGIS_BAT="
 
-:: 1. Check if configured in environment or standard paths
-if exist "C:\Program Files\QGIS 3.44.12\bin\python-qgis-ltr.bat" (
-    set "QGIS_BAT=C:\Program Files\QGIS 3.44.12\bin\python-qgis-ltr.bat"
-    goto :FoundQgis
+:: 1. Try python in PATH
+where python >nul 2>nul
+if %ERRORLEVEL% EQU 0 (
+    python "%MAIN_PY%" %*
+    goto :End
 )
 
-:: 2. Search for any python-qgis-ltr.bat in Program Files
-for /d %%D in ("C:\Program Files\QGIS 3*") do (
-    if exist "%%D\bin\python-qgis-ltr.bat" (
-        set "QGIS_BAT=%%D\bin\python-qgis-ltr.bat"
-        goto :FoundQgis
+:: 2. Try common Python 3.12 / 3.11 / 3.10 install paths
+for %%P in (
+    "%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+    "%LOCALAPPDATA%\Programs\Python\Python310\python.exe"
+    "C:\Program Files\Python312\python.exe"
+    "C:\Program Files\Python311\python.exe"
+) do (
+    if exist "%%~P" (
+        "%%~P" "%MAIN_PY%" %*
+        goto :End
     )
-    if exist "%%D\bin\python-qgis.bat" (
-        set "QGIS_BAT=%%D\bin\python-qgis.bat"
-        goto :FoundQgis
-    )
 )
 
-:: 3. Search OSGeo4W
-if exist "C:\OSGeo4W\bin\python-qgis-ltr.bat" (
-    set "QGIS_BAT=C:\OSGeo4W\bin\python-qgis-ltr.bat"
-    goto :FoundQgis
-)
-if exist "C:\OSGeo4W64\bin\python-qgis-ltr.bat" (
-    set "QGIS_BAT=C:\OSGeo4W64\bin\python-qgis-ltr.bat"
-    goto :FoundQgis
-)
-
-:NotFound
-echo [ERROR] QGIS 3.x LTR Python runtime not found on this computer!
-echo.
-echo Kruger Fire DSS requires QGIS 3.x (64-bit) to run its spatial GIS algorithms.
-echo Please download and install QGIS from: https://qgis.org
-echo.
+echo [ERROR] Python 3.x was not found on this computer.
+echo Please install Python from https://www.python.org or run the standalone package.
 pause
 exit /b 1
 
-:FoundQgis
-echo Found QGIS Python runtime: "%QGIS_BAT%"
-echo Launching Application...
-call "%QGIS_BAT%" "%MAIN_PY%"
+:End
 exit /b 0

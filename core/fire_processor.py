@@ -1,11 +1,10 @@
 import os
 import re
 from typing import List, Dict, Any, Optional, Callable
-from osgeo import ogr, osr
-import shapely.wkb
 from shapely.strtree import STRtree
 from shapely.geometry import shape
 
+from .shapefile import Reader as ShapefileReader
 from .fire_models import (
     calc_season,
     calc_frequency,
@@ -80,52 +79,55 @@ class FireImportProcessor:
         if progress_callback:
             progress_callback(0, 100, "Loading BaseGrid and building spatial index...")
 
-        grid_ds = ogr.Open(self.base_grid_path)
-        if not grid_ds:
-            raise RuntimeError(f"Could not open {self.base_grid_path}")
-        grid_lyr = grid_ds.GetLayer()
+        try:
+            sf_grid = ShapefileReader(self.base_grid_path)
+        except Exception as e:
+            raise RuntimeError(f"Could not open BaseGrid shapefile {self.base_grid_path}: {e}")
 
         grid_geoms = []
         grid_fids = []
-        for feat in grid_lyr:
-            fid = feat.GetField("FID_GRID")
-            geom_ref = feat.GetGeometryRef()
-            if geom_ref and fid is not None:
-                # Convert OGR to Shapely geometry
-                wkb = bytes(geom_ref.ExportToWkb())
-                s_geom = shapely.wkb.loads(wkb)
-                grid_geoms.append(s_geom)
-                grid_fids.append(int(fid))
+        for sr in sf_grid.iterShapeRecords():
+            if sr.shape.shapeType in (5, 15, 25):  # Polygon, PolygonZ, PolygonM
+                rec = sr.record.as_dict()
+                fid = rec.get("FID_GRID")
+                if fid is not None:
+                    try:
+                        s_geom = shape(sr.shape.__geo_interface__)
+                        grid_geoms.append(s_geom)
+                        grid_fids.append(int(float(fid)))
+                    except Exception:
+                        continue
 
         if not grid_geoms:
-            raise RuntimeError("BaseGrid shapefile contains no valid features")
+            raise RuntimeError("BaseGrid shapefile contains no valid polygon features")
 
         tree = STRtree(grid_geoms)
 
         # 2. Open Fire Shapefile
-        fire_ds = ogr.Open(fire_shp_path)
-        if not fire_ds:
-            raise RuntimeError(f"Could not open {fire_shp_path}")
-        fire_lyr = fire_ds.GetLayer()
-        total_fire_feats = fire_lyr.GetFeatureCount()
+        try:
+            sf_fire = ShapefileReader(fire_shp_path)
+        except Exception as e:
+            raise RuntimeError(f"Could not open fire shapefile {fire_shp_path}: {e}")
 
-        defn = fire_lyr.GetLayerDefn()
-        field_names = {defn.GetFieldDefn(i).GetName().upper(): defn.GetFieldDefn(i).GetName() for i in range(defn.GetFieldCount())}
+        total_fire_feats = len(sf_fire)
 
         # 3. Read fire features into list
         fire_features_data = []
         years_involved = set()
-        for feat in fire_lyr:
-            geom_ref = feat.GetGeometryRef()
-            if not geom_ref:
+        for sr in sf_fire.iterShapeRecords():
+            if sr.shape.shapeType not in (5, 15, 25):
                 continue
-            wkb = bytes(geom_ref.ExportToWkb())
-            s_geom = shapely.wkb.loads(wkb)
+            try:
+                s_geom = shape(sr.shape.__geo_interface__)
+            except Exception:
+                continue
 
-            # Extract fields
+            # Normalized record keys (upper case)
+            rec_upper = {k.upper(): v for k, v in sr.record.as_dict().items()}
+
             def get_f(upper_name: str, fallback: Any) -> Any:
-                if upper_name in field_names:
-                    val = feat.GetField(field_names[upper_name])
+                if upper_name in rec_upper:
+                    val = rec_upper[upper_name]
                     if val is not None and str(val).strip() != "":
                         return val
                 return fallback

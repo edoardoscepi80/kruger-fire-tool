@@ -20,3 +20,6 @@ settings.json
 Output/
 _inno_build/
 dist/
+build/
+installer_output/
+*.spec
