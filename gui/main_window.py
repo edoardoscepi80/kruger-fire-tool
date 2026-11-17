@@ -126,6 +126,7 @@ class MainWindow(QMainWindow):
 
         # Left Panel: Layers
         left_panel = QWidget(self)
+        left_panel.setFixedWidth(200)
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(6, 6, 6, 6)
         lbl_layers = QLabel("<b>Map Layers</b>", left_panel)
@@ -143,16 +144,19 @@ class MainWindow(QMainWindow):
         self.map_widget.layerRemoved.connect(self._on_layer_removed)
         splitter.addWidget(self.map_widget)
 
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 4)
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setCollapsible(0, False)
+        splitter.setCollapsible(1, False)
 
         # 3. Progress Bars Container (Rainfall Spatialization & Fire Import)
         res_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources")
         progress_container = QWidget(self)
+        progress_container.setFixedHeight(64)
         progress_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         progress_layout = QVBoxLayout(progress_container)
-        progress_layout.setContentsMargins(12, 6, 12, 6)
-        progress_layout.setSpacing(6)
+        progress_layout.setContentsMargins(12, 4, 12, 4)
+        progress_layout.setSpacing(4)
 
         # Row 1: Rainfall Progress
         h_rain = QHBoxLayout()
@@ -162,7 +166,7 @@ class MainWindow(QMainWindow):
         lbl_rain_title.setStyleSheet("font-weight: bold; font-size: 12px; color: #374151;")
 
         self.prog_main_rain = QProgressBar(self)
-        self.prog_main_rain.setFixedHeight(22)
+        self.prog_main_rain.setFixedHeight(20)
         self.prog_main_rain.setRange(0, 100)
         self.prog_main_rain.setValue(0)
         self.prog_main_rain.setTextVisible(True)
@@ -185,7 +189,7 @@ class MainWindow(QMainWindow):
         lbl_fire_title.setStyleSheet("font-weight: bold; font-size: 12px; color: #374151;")
 
         self.prog_main_fire = QProgressBar(self)
-        self.prog_main_fire.setFixedHeight(22)
+        self.prog_main_fire.setFixedHeight(20)
         self.prog_main_fire.setRange(0, 100)
         self.prog_main_fire.setValue(0)
         self.prog_main_fire.setTextVisible(True)
@@ -202,7 +206,7 @@ class MainWindow(QMainWindow):
 
         # 4. Bottom Brand Banner (Kruger Logo, Title, Proges Logo) - Fixed size & non-resizable
         footer_banner = QFrame(self)
-        footer_banner.setFixedHeight(82)
+        footer_banner.setFixedHeight(74)
         footer_banner.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         footer_banner.setStyleSheet("""
             QFrame {
@@ -212,22 +216,22 @@ class MainWindow(QMainWindow):
             }
         """)
         h_banner = QHBoxLayout(footer_banner)
-        h_banner.setContentsMargins(15, 4, 15, 4)
+        h_banner.setContentsMargins(15, 2, 15, 2)
 
         # Left: Kruger Logo
         lbl_kruger = QLabel(footer_banner)
         kruger_path = os.path.join(res_dir, "logo_kruger.jpg")
         if os.path.exists(kruger_path):
-            pix_k = QPixmap(kruger_path).scaledToHeight(70, Qt.SmoothTransformation)
+            pix_k = QPixmap(kruger_path).scaledToHeight(64, Qt.SmoothTransformation)
             lbl_kruger.setPixmap(pix_k)
-        lbl_kruger.setFixedSize(75, 70)
+        lbl_kruger.setFixedSize(70, 64)
         h_banner.addWidget(lbl_kruger, alignment=Qt.AlignLeft | Qt.AlignVCenter)
 
         # Center: Title
         lbl_brand_title = QLabel("ISP 4.0 - Kruger Fire Management Data Tool", footer_banner)
         lbl_brand_title.setAlignment(Qt.AlignCenter)
         lbl_brand_title.setStyleSheet("""
-            font-size: 21px;
+            font-size: 20px;
             font-weight: bold;
             color: #111827;
             letter-spacing: 0.5px;
@@ -238,9 +242,9 @@ class MainWindow(QMainWindow):
         lbl_proges = QLabel(footer_banner)
         proges_path = os.path.join(res_dir, "logo_proges.jpg")
         if os.path.exists(proges_path):
-            pix_p = QPixmap(proges_path).scaledToHeight(70, Qt.SmoothTransformation)
+            pix_p = QPixmap(proges_path).scaledToHeight(64, Qt.SmoothTransformation)
             lbl_proges.setPixmap(pix_p)
-        lbl_proges.setFixedSize(75, 70)
+        lbl_proges.setFixedSize(70, 64)
         h_banner.addWidget(lbl_proges, alignment=Qt.AlignRight | Qt.AlignVCenter)
 
         # Assemble into Central Widget
@@ -259,7 +263,8 @@ class MainWindow(QMainWindow):
         self.dock_log.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
         self.txt_log = QTextEdit(self.dock_log)
         self.txt_log.setReadOnly(True)
-        self.txt_log.setMaximumHeight(140)
+        self.txt_log.setMaximumHeight(120)
+        self.txt_log.setMinimumHeight(75)
         self.dock_log.setWidget(self.txt_log)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dock_log)
 
@@ -348,21 +353,15 @@ class MainWindow(QMainWindow):
                 break
         self.log(f"Layer removed: {layer_id}")
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Ensure full extent fitting is applied once the main window is visible
+        QTimer.singleShot(120, self.map_widget.zoom_to_full_extent)
+
     def _on_layer_visibility_changed(self, item: QListWidgetItem):
         layer_id = item.data(Qt.UserRole)
         is_visible = (item.checkState() == Qt.Checked)
-        for lyr in self.map_widget.layers_list:
-            if lyr.id() == layer_id:
-                # Toggle visibility in canvas
-                if is_visible and lyr not in self.map_widget.canvas.layers():
-                    layers = self.map_widget.canvas.layers()
-                    layers.append(lyr)
-                    self.map_widget.canvas.setLayers(layers)
-                elif not is_visible and lyr in self.map_widget.canvas.layers():
-                    layers = [l for l in self.map_widget.canvas.layers() if l.id() != layer_id]
-                    self.map_widget.canvas.setLayers(layers)
-                self.map_widget.canvas.refresh()
-                break
+        self.map_widget.set_layer_visible(layer_id, is_visible)
 
     def _on_rain_tick(self):
         self.rain_time = self.rain_time.addSecs(1)

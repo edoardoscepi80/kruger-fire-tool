@@ -42,6 +42,17 @@ class MapCanvasView(QGraphicsView):
         self._mode = "pan"  # "pan", "zoom_in", "zoom_out"
         self._pan_active = False
         self._last_mouse_pos = QPointF()
+        self._initial_fitted = False
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if not self._initial_fitted and self.scene() and not self.scene().itemsBoundingRect().isNull():
+            rect = self.scene().itemsBoundingRect()
+            if rect.width() > 0 and rect.height() > 0:
+                self._initial_fitted = True
+                pad_x = rect.width() * 0.03
+                pad_y = rect.height() * 0.03
+                self.fitInView(rect.adjusted(-pad_x, -pad_y, pad_x, pad_y), Qt.KeepAspectRatio)
 
     def set_mode(self, mode: str):
         self._mode = mode
@@ -193,9 +204,8 @@ class MapWidget(QWidget):
     def zoom_to_full_extent(self):
         rect = self.scene.itemsBoundingRect()
         if not rect.isNull() and rect.width() > 0 and rect.height() > 0:
-            # Add 5% padding
-            pad_x = rect.width() * 0.05
-            pad_y = rect.height() * 0.05
+            pad_x = rect.width() * 0.03
+            pad_y = rect.height() * 0.03
             padded_rect = rect.adjusted(-pad_x, -pad_y, pad_x, pad_y)
             self.canvas.fitInView(padded_rect, Qt.KeepAspectRatio)
 
