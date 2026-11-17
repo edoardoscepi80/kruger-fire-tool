@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Kruger Fire DSS (Run / Debug)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "C:\\Program Files\\QGIS 3.44.12\\apps\\qgis-ltr\\python;${workspaceFolder}",
+                "PATH": "C:\\Program Files\\QGIS 3.44.12\\bin;C:\\Program Files\\QGIS 3.44.12\\apps\\qgis-ltr\\bin;${env:PATH}"
+            }
+        }
+    ]
+}

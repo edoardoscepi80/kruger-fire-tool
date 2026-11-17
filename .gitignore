@@ -1,0 +1,21 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Windows thumbnail and system caches
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Local settings and user overrides
+settings.json
+
+# Local temp logs
+*.log
+*.tmp
+
+# Inno Setup build artifacts
+Output/
+_inno_build/

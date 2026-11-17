@@ -1,0 +1,11 @@
+{
+    "app_name": "Kruger National Park - Fire & Rainfall Management DSS",
+    "latest_version": "1.0.0",
+    "release_date": "2026-11-17",
+    "changelog": "### Release 1.0.0 (Initial Open-Source Release)\n- Modernized Python 3 / QGIS 3.x 64-bit GIS engine replacing legacy MapWinGIS / DotSpatial.\n- Integrated Rainfall Station Manager for 21 weather stations with direct Db.mdb synchronisation.\n- Dual real-time progress bars with active elapsed time monitors for long processes.\n- Attorre and Navashni ecological fire impact and rainfall spatialization algorithms.\n- BaseGrid 2027 extension with 2km boundary buffer eliminating perimeter gaps.\n- Automatic startup loading of Kruger boundary layer (bndry_kruger.shp).",
+    "download_url": "https://github.com/edoardoscepi80/kruger-fire-tool/releases/download/v1.0.0/kruger_fire_tool_v1.0.0.zip",
+    "package_type": "archive",
+    "sha256": "",
+    "mandatory": false,
+    "min_installer_version": "1.0.0"
+}
