@@ -882,11 +882,15 @@ class StationReadingEditDialog(QDialog):
         # Helper buttons bar
         h_tools = QHBoxLayout()
         btn_zero = QPushButton("Reset All to 0 mm", self)
+        btn_zero.setAutoDefault(False)
+        btn_zero.setDefault(False)
         btn_zero.clicked.connect(self._reset_all_zero)
         h_tools.addWidget(btn_zero)
 
         if self.db and not self.is_edit_mode:
             btn_copy_last = QPushButton("Copy From Latest Recorded Year", self)
+            btn_copy_last.setAutoDefault(False)
+            btn_copy_last.setDefault(False)
             btn_copy_last.clicked.connect(self._copy_from_latest)
             h_tools.addWidget(btn_copy_last)
 
@@ -937,10 +941,14 @@ class StationReadingEditDialog(QDialog):
         # Bottom Buttons
         h_btns = QHBoxLayout()
         btn_save = QPushButton("💾 Save to Database", self)
+        btn_save.setAutoDefault(False)
+        btn_save.setDefault(False)
         btn_save.setStyleSheet("font-weight: bold; background-color: #0d6efd; color: white; padding: 6px 14px; border-radius: 4px;")
         btn_save.clicked.connect(self._save)
 
         btn_cancel = QPushButton("Cancel", self)
+        btn_cancel.setAutoDefault(False)
+        btn_cancel.setDefault(False)
         btn_cancel.clicked.connect(self.reject)
 
         h_btns.addStretch()
@@ -948,10 +956,27 @@ class StationReadingEditDialog(QDialog):
         h_btns.addWidget(btn_cancel)
         layout.addLayout(h_btns)
 
+        # Set initial focus to the input fields so NO button is pre-highlighted or pre-focused
+        if not self.is_edit_mode:
+            self.spn_year.setFocus()
+        else:
+            self.txt_year_rain.setFocus()
+
     def _on_year_changed(self, y: int):
         self.txt_year_rain.setText(f"{y}-{str(y + 1)[-2:]}")
 
     def _reset_all_zero(self):
+        # If any station has values > 0, ask for confirmation to avoid accidental data loss
+        if any(spn.value() > 0.0 for spn in self.spin_boxes.values()):
+            reply = QMessageBox.question(
+                self,
+                "Confirm Reset",
+                "Are you sure you want to reset all rainfall readings to 0.0 mm?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply != QMessageBox.Yes:
+                return
         for spn in self.spin_boxes.values():
             spn.setValue(0.0)
 
