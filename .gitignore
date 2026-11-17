@@ -19,3 +19,4 @@ settings.json
 # Inno Setup build artifacts
 Output/
 _inno_build/
+dist/
